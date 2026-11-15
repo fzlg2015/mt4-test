@@ -46,9 +46,29 @@ MT4 导航器里的「自定义指标」只列出这个目录里的 `.ex4`，**�
 ## 四、在本机写一个指标并上线
 
 1. 在 `MQL4\Indicators\` 里新建/修改 `.mq4`（UTF-8 **带 BOM**，中文注释才不乱码）。
-2. MetaEditor 里 **F7** 编译，同目录生成 `.ex4`。或用命令行：`metaeditor.exe /compile:"路径\X.mq4" /log`，**别信退出码，看 `.log` 里的 `Result: 0 errors`**。
+2. MetaEditor 里 **F7** 编译，同目录生成 `.ex4`。
 3. MT4 导航器 →「自定义指标」右键 **刷新** → 拖到图表验证效果。
 4. `git add -A && git commit -m "..." && git push`。
+
+### 命令行编译（本机实测有效的写法）
+
+```bat
+cd /d "D:\Program Files\MetaTrader 4"
+metaeditor.exe "/compile:D:\PROGRA~1\METATR~1\MQL4\Indicators\X.mq4" /log
+```
+
+三条实测结论，缺一个就拿不到结果：
+
+- **路径必须用 8.3 短名**。写 `D:\Program Files\...` 这种带空格的绝对路径，或写相对路径，`/log` 都**静默不生成日志**，只能靠产物时间戳猜；用短名（`PROGRA~1`、`METATR~1`）才正常输出。
+- **日志是同目录同名 `.log`，UTF-16 编码**，内容形如 `Result: 0 errors, 0 warnings, 134 msec elapsed`。
+- **退出码不可信**：编译成功也可能是 `1`；反过来，语法错误时**不会产出 `.ex4`**——产物没更新才是最硬的失败信号。
+- 编译失败时 `*.log` 里带行号（如 `'int bad = ;' - expression expected`），照行号改即可。
+
+拿到本机短路径的方法：对目录执行 `GetShortPathNameW`（本机为 `D:\PROGRA~1\METATR~1`）。
+
+### 关于 `.ex4` 每次编译都变
+
+编译产物内含时间戳，**每次编译字节都不同**，所以改完代码提交时，`.ex4` 会跟着出现在 diff 里，属正常现象。约定：源码与产物**同一个 commit 一起提交**，语义上就是"一份可部署的包"。
 
 ## 五、当前状态与约定
 
