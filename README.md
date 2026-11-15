@@ -1,18 +1,29 @@
 # mt4-test
 
-MT4 / MQL4 测试仓库。目录结构照 MetaQuotes 官方 `<data_folder>\MQL4\` 原样建，以后写 EA、指标、脚本，直接往对应文件夹放就行。
+MT4 / MQL4 仓库。**本机 MT4 的安装目录就是本仓库的 git 工作区**：改这里的文件 = 改仓库文件，没有"复制同步"这一步。远端：`https://github.com/fzlg2015/mt4-test`
 
 **第一个指标**：`MQL4/Indicators/SimpleMA.mq4` —— 最简单的一根 20 周期 SMA 均线，画在主图上，周期可在指标属性里改。
 
-## 一、指标到底该放哪个文件夹
+## 一、工作方式（2026-11-16 起）
+
+本机目录 `D:\Program Files\MetaTrader 4\` 已初始化为 git 工作区，远端即本仓库，历史连续（`cc06c67` 起）。
+
+- **跟踪范围**：只有 `MQL4/`、`README.md`、`.gitignore`。`terminal.exe`（34 MB）、`metaeditor.exe`（16 MB）、`config/`、`logs/`、`templates/`、`tester/`、`history/`、`profiles/` 全部不跟踪，见 `.gitignore` 的白名单写法。
+- **零复制**：MT4 读的文件就是 git 管的文件。改完直接提交，不存在"拷进仓库"的环节。
+- **日常三步**：在 MT4 / MetaEditor 里改 → `git add -A` → `git commit -m "说明"` → `git push`。
+- **日志不跟踪**：`MQL4/Logs/`、`*.log`、`*.bak`、`*.tmp` 均在忽略列表内。
+- **另一台机器 / 服务器**：`git clone` 或 `git pull`，再把 `MQL4/` 覆盖到那台机器的数据文件夹即可直接使用（`.ex4` 已入库，不必先装 MetaEditor 编译）。
+
+## 二、指标到底该放哪个文件夹
 
 官方规定：自定义指标（源码 `.mq4` + 编译产物 `.ex4`）一律放在 `<data_folder>\MQL4\Indicators\`。
 MT4 导航器里的「自定义指标」只列出这个目录里的 `.ex4`，**没编译出 .ex4 就看不到、也挂不上图**。
 
 `<data_folder>` 怎么找：MT4 菜单「文件 → 打开数据文件夹」，或 MetaEditor 里 `File → Open Data Folder`。
-注意：Windows 开了 UAC 时它通常在 `%APPDATA%\MetaQuotes\Terminal\<一长串实例ID>\`，**不是** MT4 的安装目录。
+注意：Windows 开了 UAC 且非便携模式时，它通常在 `%APPDATA%\MetaQuotes\Terminal\<一长串实例ID>\`，**不是** MT4 的安装目录。
+本机用的是 **便携模式**（`terminal.exe /portable`），所以数据目录就是安装目录 `D:\Program Files\MetaTrader 4\`，与仓库完全重合。
 
-## 二、标准子目录（官方原样）
+## 三、标准子目录（官方原样）
 
 | 文件夹 | 放什么 |
 |---|---|
@@ -32,22 +43,20 @@ MT4 导航器里的「自定义指标」只列出这个目录里的 `.ex4`，**�
 - https://docs.mql4.com/cn （Experts / Indicators / Scripts / Libraries / Include 各自用途）
 - https://www.metatrader4.com/en/trading-platform/help/overview/navigator （导航器只显示 `.ex4`，拷入后需「刷新」）
 
-## 三、部署到 MT4 的步骤
+## 四、在本机写一个指标并上线
 
-1. MT4 里「文件 → 打开数据文件夹」，找到那个 `MQL4\`。
-2. 把本仓库 `MQL4\Indicators\SimpleMA.mq4` 拷到数据文件夹的 `MQL4\Indicators\`。
-3. MetaEditor 打开它 → 按 **F7** 编译，同目录生成 `SimpleMA.ex4`。
-4. 回到 MT4 导航器 →「自定义指标」右键 **刷新** → 把 `SimpleMA` 拖到图表，弹出参数窗口可改周期。
+1. 在 `MQL4\Indicators\` 里新建/修改 `.mq4`（UTF-8 **带 BOM**，中文注释才不乱码）。
+2. MetaEditor 里 **F7** 编译，同目录生成 `.ex4`。或用命令行：`metaeditor.exe /compile:"路径\X.mq4" /log`，**别信退出码，看 `.log` 里的 `Result: 0 errors`**。
+3. MT4 导航器 →「自定义指标」右键 **刷新** → 拖到图表验证效果。
+4. `git add -A && git commit -m "..." && git push`。
 
-适用 MT4 build 600 及以上（现在流通的 MT4 都是）。
+## 五、当前状态与约定
 
-## 四、当前状态与约定
-
-- 这台 i7 **没有安装 MT4 / MetaEditor**，因此本仓库里的 `.mq4` 只做了静态检查，**没有实际编译出 .ex4**。到你那台装了 MT4 的机器上 F7 编译一次即可（正常应 0 errors / 0 warnings）。
-- `.gitignore` 目前排除 `*.ex4` 编译产物和日志：源码进 git、可 diff、可回退。以后若服务器不方便编译、需要直接拉 `.ex4`，把这行删掉即可。
+- 本机 MT4：便携模式，`build 1440`，程序与数据都在 `D:\Program Files\MetaTrader 4\`，C 盘零写入。
+- `.ex4` **已纳入版本库**（2026-11-16 起）：目的是服务器/另一台机器 pull 下来即可用，不必先编译。想回到"只存源码"，在 `.gitignore` 里重新放开 `*.ex4`。
 - 改代码留干净 commit，随时能 `git revert`。
-- 仓库是 **public**；以后要放真实交易策略（EA），建议先转私有或另建私有仓库。
+- 仓库是 **public**；`MQL4/Include` 里的 `.mqh` 标准库、`bmp` 资源、多数示例 EA/指标均为 MetaQuotes 随终端自带的官方文件。以后放真实交易策略（EA）建议先转私有或另建私有仓库。
 
-## 五、仓库
+## 六、仓库
 
 `https://github.com/fzlg2015/mt4-test`
