@@ -84,6 +84,16 @@ metaeditor.exe "/compile:D:\PROGRA~1\METATR~1\MQL4\Indicators\X.mq4" /log
 - **位数**：MT4 是 32 位程序，只加载 x86 的 dll，64 位的 `BadImageFormatException` 一律不认。
 - **依赖**：目标机若缺对应版本的 Visual C++ 运行库，会加载失败且报错含糊——换机器跑 EA 时优先怀疑这个。
 
+### 自建指标清单（`MQL4\Indicators\任意周期\`）
+
+同系列指标统一放这个子目录，文件名以「任意周期」开头，MT4 导航器里显示为「自定义指标 → 任意周期 → xxx」。
+
+| 文件 | 作用 | 参数 |
+|---|---|---|
+| `任意周期中轴线.mq4` | 画一条横贯全图的水平线，值 = **所选周期上一根 K 线**的 `(最高价 + 最低价) / 2`。选日线就是昨天的中轴，选周线就是上周的中轴 | `InpTF` 周期下拉（M1/M5/M15/M30/H1/H4/D1/W1/MN1，默认日线）、`InpColor` 线色、`InpWidth` 线宽、`InpDebug` 日志开关 |
+
+实现要点：`iHigh(NULL, tf, 1)` / `iLow(NULL, tf, 1)` 取所选周期的上一根（`shift=0` 是正在走的那根，不能用）；每根 bar 填同一个值，于是画成水平线；该周期无数据时 `iHigh` 返回 0（官方明确行为），此时判定无效、不画线，不会画出 0 价位的假线。
+
 ## 五、当前状态与约定
 
 - 本机 MT4：便携模式，`build 1440`，程序与数据都在 `D:\Program Files\MetaTrader 4\`，C 盘零写入。
