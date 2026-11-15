@@ -9,7 +9,7 @@ MT4 / MQL4 仓库。**本机 MT4 的安装目录就是本仓库的 git 工作区
 本机目录 `D:\Program Files\MetaTrader 4\` 已初始化为 git 工作区，远端即本仓库，历史连续（`cc06c67` 起）。
 
 - **跟踪范围**：只有 `MQL4/`、`README.md`、`.gitignore`，且 **只存源码与原文件**。`terminal.exe`（34 MB）、`metaeditor.exe`（16 MB）、`config/`、`logs/`、`templates/`、`tester/`、`history/`、`profiles/` 全部不跟踪，见 `.gitignore` 的白名单写法。
-- **产物不进库**：`*.ex4`、`*.ex5`、`*.dll`、`mqlcache.dat`、`*.dat` 一律忽略——它们是本机编译/运行生成的，谁拉下来谁自己编译。仓库里只有 `.mq4` 源码、`.mqh` 头文件、`.bmp` 资源。
+- **产物不进库**：`*.ex4`、`*.ex5`、`mqlcache.dat`、`*.dat` 一律忽略——它们是本机编译/运行生成的，谁拉下来谁自己编译。仓库里只有 `.mq4` 源码、`.mqh` 头文件、`.bmp` 资源，以及 **`.dll` 保留入库**（见下方说明）。
 - **零复制**：MT4 读的文件就是 git 管的文件。改完直接提交，不存在"拷进仓库"的环节。
 - **日常三步**：在 MT4 / MetaEditor 里改 → `git add -A` → `git commit -m "说明"` → `git push`。
 - **日志不跟踪**：`MQL4/Logs/`、`*.log`、`*.bak`、`*.tmp` 均在忽略列表内。
@@ -67,16 +67,27 @@ metaeditor.exe "/compile:D:\PROGRA~1\METATR~1\MQL4\Indicators\X.mq4" /log
 
 拿到本机短路径的方法：对目录执行 `GetShortPathNameW`（本机为 `D:\PROGRA~1\METATR~1`）。
 
-### 为什么 `.ex4` 不进版本库
+### 为什么 `.ex4` 不进版本库，但 `.dll` 要进
 
-`.ex4` 是编译产物：内含时间戳，**同一份源码编译两次字节都不同**，且与机器、与终端 build 版本相关。把它塞进 git 只会让每次提交都多出一堆无意义的二进制 diff，改坏了也看不出改在哪。
+`.ex4` 是纯编译产物：内含时间戳，**同一份源码编译两次字节都不同**，且与机器、与终端 build 版本相关。把它塞进 git 只会让每次提交都多出一堆无意义的二进制 diff，改坏了也看不出改在哪。约定：**仓库只存源码（`.mq4` / `.mqh`）**，`.ex4` 由每台机器自己编译生成，已被 `.gitignore` 排除。
 
-约定：**仓库只存源码（`.mq4` / `.mqh`）**，`.ex4` 由每台机器自己编译生成，已被 `.gitignore` 排除。判断一次编译是否成功，看本机 `.ex4` 有没有更新，而不是看仓库里有没有它。
+`.dll` 相反，**保留入库**（2026-11-16 定）。理由：
+
+- 它是 **MQL4 运行时的依赖**，`#import` 不到就直接报 `cannot load dll`，程序根本跑不起来；
+- 没有源码的第三方 dll，一旦本地丢了就**再也补不回来**，而 `.ex4` 随时能重新编译；
+- 体积很小（本仓库唯一的一个 `DLLSample.dll` 仅 105 KB），进库成本可以忽略。
+
+判断口径：**能重新生成的（`.ex4`）不进库，不能重新生成的（第三方 `.dll`）必须进库。** 有源码的 dll（如 `DLLSample.cpp` + `.vcxproj`）能重编，但为省事也一并保留二进制。
+
+### DLL 的两个实操坑
+
+- **位数**：MT4 是 32 位程序，只加载 x86 的 dll，64 位的 `BadImageFormatException` 一律不认。
+- **依赖**：目标机若缺对应版本的 Visual C++ 运行库，会加载失败且报错含糊——换机器跑 EA 时优先怀疑这个。
 
 ## 五、当前状态与约定
 
 - 本机 MT4：便携模式，`build 1440`，程序与数据都在 `D:\Program Files\MetaTrader 4\`，C 盘零写入。
-- **只存源码**（2026-11-16 定）：`.ex4`、`.dll`、`mqlcache.dat` 已从版本库移除并加入忽略列表，本地文件保留、MT4 照常使用。仓库文件数 191 → 157。
+- **产物排除、依赖保留**（2026-11-16 定）：`.ex4`、`mqlcache.dat` 已从版本库移除并加入忽略列表；**`.dll` 保留入库**（`MQL4/Scripts/Examples/DLL/Libraries/DLLSample.dll`，105 KB）。本地产物文件全部保留，MT4 照常使用。跟踪文件 191 → 158。
 - 改代码留干净 commit，随时能 `git revert`。
 - 仓库是 **public**；`MQL4/Include` 里的 `.mqh` 标准库、`bmp` 资源、多数示例 EA/指标均为 MetaQuotes 随终端自带的官方文件。以后放真实交易策略（EA）建议先转私有或另建私有仓库。
 
