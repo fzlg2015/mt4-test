@@ -8,11 +8,12 @@ MT4 / MQL4 仓库。**本机 MT4 的安装目录就是本仓库的 git 工作区
 
 本机目录 `D:\Program Files\MetaTrader 4\` 已初始化为 git 工作区，远端即本仓库，历史连续（`cc06c67` 起）。
 
-- **跟踪范围**：只有 `MQL4/`、`README.md`、`.gitignore`。`terminal.exe`（34 MB）、`metaeditor.exe`（16 MB）、`config/`、`logs/`、`templates/`、`tester/`、`history/`、`profiles/` 全部不跟踪，见 `.gitignore` 的白名单写法。
+- **跟踪范围**：只有 `MQL4/`、`README.md`、`.gitignore`，且 **只存源码与原文件**。`terminal.exe`（34 MB）、`metaeditor.exe`（16 MB）、`config/`、`logs/`、`templates/`、`tester/`、`history/`、`profiles/` 全部不跟踪，见 `.gitignore` 的白名单写法。
+- **产物不进库**：`*.ex4`、`*.ex5`、`*.dll`、`mqlcache.dat`、`*.dat` 一律忽略——它们是本机编译/运行生成的，谁拉下来谁自己编译。仓库里只有 `.mq4` 源码、`.mqh` 头文件、`.bmp` 资源。
 - **零复制**：MT4 读的文件就是 git 管的文件。改完直接提交，不存在"拷进仓库"的环节。
 - **日常三步**：在 MT4 / MetaEditor 里改 → `git add -A` → `git commit -m "说明"` → `git push`。
 - **日志不跟踪**：`MQL4/Logs/`、`*.log`、`*.bak`、`*.tmp` 均在忽略列表内。
-- **另一台机器 / 服务器**：`git clone` 或 `git pull`，再把 `MQL4/` 覆盖到那台机器的数据文件夹即可直接使用（`.ex4` 已入库，不必先装 MetaEditor 编译）。
+- **另一台机器 / 服务器**：`git clone` 或 `git pull`，把 `MQL4/` 覆盖到那台机器的数据文件夹，然后**在那边 F7 或命令行编译一次**——仓库只给源码，`.ex4` 得在目标机自己生成（`.ex4` 与机器、与 build 版本相关，跨机拷过去反而可能不被识别）。
 
 ## 二、指标到底该放哪个文件夹
 
@@ -66,14 +67,16 @@ metaeditor.exe "/compile:D:\PROGRA~1\METATR~1\MQL4\Indicators\X.mq4" /log
 
 拿到本机短路径的方法：对目录执行 `GetShortPathNameW`（本机为 `D:\PROGRA~1\METATR~1`）。
 
-### 关于 `.ex4` 每次编译都变
+### 为什么 `.ex4` 不进版本库
 
-编译产物内含时间戳，**每次编译字节都不同**，所以改完代码提交时，`.ex4` 会跟着出现在 diff 里，属正常现象。约定：源码与产物**同一个 commit 一起提交**，语义上就是"一份可部署的包"。
+`.ex4` 是编译产物：内含时间戳，**同一份源码编译两次字节都不同**，且与机器、与终端 build 版本相关。把它塞进 git 只会让每次提交都多出一堆无意义的二进制 diff，改坏了也看不出改在哪。
+
+约定：**仓库只存源码（`.mq4` / `.mqh`）**，`.ex4` 由每台机器自己编译生成，已被 `.gitignore` 排除。判断一次编译是否成功，看本机 `.ex4` 有没有更新，而不是看仓库里有没有它。
 
 ## 五、当前状态与约定
 
 - 本机 MT4：便携模式，`build 1440`，程序与数据都在 `D:\Program Files\MetaTrader 4\`，C 盘零写入。
-- `.ex4` **已纳入版本库**（2026-11-16 起）：目的是服务器/另一台机器 pull 下来即可用，不必先编译。想回到"只存源码"，在 `.gitignore` 里重新放开 `*.ex4`。
+- **只存源码**（2026-11-16 定）：`.ex4`、`.dll`、`mqlcache.dat` 已从版本库移除并加入忽略列表，本地文件保留、MT4 照常使用。仓库文件数 191 → 157。
 - 改代码留干净 commit，随时能 `git revert`。
 - 仓库是 **public**；`MQL4/Include` 里的 `.mqh` 标准库、`bmp` 资源、多数示例 EA/指标均为 MetaQuotes 随终端自带的官方文件。以后放真实交易策略（EA）建议先转私有或另建私有仓库。
 
